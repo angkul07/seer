@@ -8,7 +8,7 @@ a small hackable library that makes it easier to do interpretability work with a
 ## What is Seer?
 Seer is a library for interpretability researchers who want to do research on or with agents. It makes use cases like creating environments for agents, equipping an agent with your technique and building on papers easier-and fixes some of the annoying things you get from just using Claude Code out of the box.
 
-The core mechanism: you specify an environment (github repos, files, dependencies), Seer launches it as a sandbox on Modal (GPU or CPU), and an agent operates within it via an IPython kernel. 
+The core mechanism: you specify an environment (github repos, files, dependencies), Seer launches it as a sandbox on Modal (GPU or CPU), and an agent (Claude, Gemini, or OpenAI) operates within it via an IPython kernel.
 This setup means you can see what the agent is doing as it runs, it can iteratively fix bugs and adjust its work, and you can spin up many sandboxes in parallel.
 
 Seer is designed to be extensible - you can build on top of it to support complex techniques that you might want the agent to use, eg. [giving an agent SAE tools to diff two Gemini checkpoints](https://ajobi-uhc.github.io/seer/experiments/05-checkpoint-diffing/) or [building a Petri-style auditing agent with whitebox tools](https://ajobi-uhc.github.io/seer/experiments/06-petri-harness/).
@@ -76,18 +76,29 @@ uv run modal token new
 Create a `.env` file in the project root:
 
 ```bash
-# Required for agent harness
-ANTHROPIC_API_KEY=sk-ant-...
+# At least one provider API key is required
+ANTHROPIC_API_KEY=sk-ant-...    # For Claude (default provider)
+GOOGLE_API_KEY=AIza...          # For Gemini
+OPENAI_API_KEY=sk-...           # For OpenAI
 
 # Optional - only needed if using HuggingFace gated models
 HF_TOKEN=hf_...
 ```
 
-### 4. Run the hidden preference investigation
+### 4. Run an experiment
 
 ```bash
 cd experiments/hidden-preference-investigation
 uv run python main.py
+```
+
+By default experiments use Claude. To use a different provider, change the `provider` argument in the experiment's `main.py`:
+
+```python
+# Any of these work — same interface, just swap the provider string
+async for msg in run_agent(prompt=prompt, mcp_config=session.mcp_config, provider="claude"):
+async for msg in run_agent(prompt=prompt, mcp_config=session.mcp_config, provider="gemini"):
+async for msg in run_agent(prompt=prompt, mcp_config=session.mcp_config, provider="openai"):
 ```
 
 ### 5. Track progress
@@ -117,6 +128,43 @@ uv run python main.py
 Refer to [docs](https://ajobi-uhc.github.io/seer) to learn how to use the library to define your own experiments.
 
 View some example results notebooks in [example_runs](https://github.com/ajobi-uhc/seer/tree/main/example_runs)
+
+## Multi-Provider Support
+
+Seer supports three agent providers out of the box. All share the same interface — the rest of the stack (sandboxes, notebooks, MCP tools, logging) is fully provider-agnostic.
+
+| Provider | SDK | Env Variable | Default Model |
+|----------|-----|-------------|---------------|
+| `claude` | `claude-agent-sdk` | `ANTHROPIC_API_KEY` | `claude-sonnet-4-5-20250929` |
+| `gemini` | `google-genai` | `GOOGLE_API_KEY` | `gemini-3.0-pro` |
+| `openai` | `openai-agents` | `OPENAI_API_KEY` | `gpt-5` |
+
+**Basic usage:**
+
+```python
+from src.harness import run_agent
+
+# Just change provider= to switch models. Everything else stays the same.
+async for msg in run_agent(
+    prompt="Your system prompt",
+    mcp_config=session.mcp_config,
+    provider="gemini",          # or "claude" or "openai"
+    model="gemini-2.0-flash",   # optional: override default model
+):
+    pass
+```
+
+**Interactive mode** (multi-turn with ESC to interrupt) also supports all providers:
+
+```python
+from src.harness.interactive import run_agent_interactive
+
+await run_agent_interactive(
+    prompt="Your system prompt",
+    mcp_config=session.mcp_config,
+    provider="gemini",
+)
+```
 
 ## Acknowledgements
 
