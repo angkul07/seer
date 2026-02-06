@@ -20,7 +20,11 @@ def _build_mcp_servers(mcp_config: dict) -> list[MCPServerStdio]:
         }
         if "env" in config:
             params["env"] = config["env"]
-        servers.append(MCPServerStdio(name=name, params=params))
+        servers.append(MCPServerStdio(
+            name=name,
+            params=params,
+            client_session_timeout_seconds=300,
+        ))
     return servers
 
 

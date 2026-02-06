@@ -1,5 +1,6 @@
 """Gemini provider using google-genai SDK with manual agentic loop."""
 
+import asyncio
 import os
 import uuid
 from contextlib import AsyncExitStack
@@ -40,7 +41,7 @@ async def run_gemini(
     mcp_config: dict,
     system_prompt: str,
     task: str,
-    model: str = "gemini-2.0-flash",
+    model: str = "gemini-3-pro-preview",
     verbose: bool = False,
 ) -> AsyncIterator:
     """
@@ -103,7 +104,11 @@ async def run_gemini(
         contents = [types.Content(role="user", parts=[types.Part.from_text(text=task)])]
 
         # Agentic loop
-        for _ in range(MAX_TURNS):
+        for turn in range(MAX_TURNS):
+            # Rate limit: avoid 429s on free-tier APIs
+            if turn > 0:
+                await asyncio.sleep(8)
+
             config_obj = types.GenerateContentConfig(
                 system_instruction=system_prompt,
                 tools=gemini_tools,
