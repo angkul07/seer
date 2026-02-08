@@ -12,7 +12,7 @@ Provider = Literal["claude", "gemini", "openai"]
 DEFAULT_MODELS = {
     "claude": "claude-sonnet-4-5-20250929",
     "gemini": "gemini-3-pro-preview",
-    "openai": "gpt-4.1-mini",
+    "openai": "gpt-5",
 }
 
 
