@@ -32,7 +32,7 @@ async def run_openai(
     mcp_config: dict,
     system_prompt: str,
     task: str,
-    model: str = "gpt-4o-mini",
+    model: str = "gpt-5",
     verbose: bool = False,
 ) -> AsyncIterator[Union[dict, AdapterMessage]]:
     """
